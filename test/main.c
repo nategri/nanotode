@@ -1,7 +1,7 @@
 // Simple test of connectome interfaces
 //
 // Compile with:
-// gcc -I. -o ./nanotode_test main.c muscles.c neuron_interface.c connectome.c neural_rom.c
+// gcc -I./include -o ./nanotode_test test/main.c src/muscles.c src/connectome.c src/neural_rom.c
 //
 
 #include "defines.h"
