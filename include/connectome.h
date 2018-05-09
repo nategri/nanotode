@@ -63,9 +63,15 @@ void ctm_discharge_neuron(Connectome* const, const uint16_t);
 // that list---otherwise NULL, 0
 void ctm_neural_cycle(Connectome* const, const uint16_t*, const uint16_t);
 
-// (Optional)
-// Check whether or not each of the requested neurons discharged 
+// Utility functions
+
+// Functions for returning cell weights
+int16_t ctm_get_weight(Connectome* const, const uint16_t);
+void ctm_weight_query(Connectome* const, const uint16_t*, uint16_t*, const uint16_t);
+
+// Check whether or not one or more neurons discharged 
 // in the last tick
+uint8_t ctm_get_discharge(Connectome* const, const uint16_t);
 void ctm_discharge_query(Connectome* const, const uint16_t*, uint8_t*, const uint16_t);
 
 #endif

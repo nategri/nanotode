@@ -40,6 +40,6 @@ const uint16_t LARGE_CONST_ARR sig_motor_neuron_b[] = {
   N_VB2, N_VB3, N_VB4, N_VB5, N_VB6
 };
 
-const uint16_t LARGE_CONST_ARR sig_motor_neurons_a[] = {
+const uint16_t LARGE_CONST_ARR sig_motor_neuron_a[] = {
   N_VA1, N_VA2
 };

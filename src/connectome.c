@@ -202,11 +202,33 @@ void ctm_neural_cycle(Connectome* const c, const uint16_t* stim_neuron, const ui
   ctm_iterate_state(c);
 }
 
-// (Optional)
-// Check whether or not each of the requested neurons discharged 
+// Utility functions
+
+// Functions for returning cell weights
+int16_t ctm_get_weight(Connectome* const c, const uint16_t id) {
+  int16_t weight = ctm_get_current_state(c, id);
+
+  return weight;
+}
+
+void ctm_weight_query(Connectome* const c, const uint16_t* input_id, uint16_t* query_result, const uint16_t len_query) {
+  for(uint16_t i = 0; i < len_query; i++) {
+    uint16_t id = input_id[i];
+    int16_t weight = ctm_get_current_state(c, id);
+    query_result[i] = weight;
+  }
+}
+
+// Check whether or not one or more neurons discharged 
 // in the last tick
-void ctm_discharge_query(Connectome* const c, const uint16_t* input_id, uint8_t* query_result, const uint16_t len) {
-  for(uint8_t i; i < len; i++) {
+uint8_t ctm_get_discharge(Connectome* const c, const uint16_t id) {
+  uint8_t discharged = c->_meta[id] >> 7;
+
+  return discharged;
+}
+
+void ctm_discharge_query(Connectome* const c, const uint16_t* input_id, uint8_t* query_result, const uint16_t len_query) {
+  for(uint16_t i; i < len_query; i++) {
     uint16_t id = input_id[i];
     uint8_t discharged = c->_meta[id] >> 7;
     query_result[i] = discharged;
