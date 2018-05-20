@@ -44,8 +44,8 @@
 #define NECK_MUSCLES 8
 
 // Number of A and B type motor neurons
-#define MOTOR_A 18
-#define MOTOR_B 21
+#define MOTOR_A 21
+#define MOTOR_B 18
 
 // Number of 'signature' A and B type motor neurons
 // (used in determining forward or reverse locomotion)
@@ -453,5 +453,6 @@
 #define N_MVR24 394
 #define N_MVULVA 395
 #define N_VC6 396
+
 
 #endif

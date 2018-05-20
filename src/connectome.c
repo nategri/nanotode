@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "connectome.h"
 
 //
@@ -7,11 +8,11 @@
 
 // Struct for representing a neuron connection
 typedef struct {
-  const uint16_t id;
-  const int8_t weight;
+  uint16_t id;
+  int8_t weight;
 } NeuronConnection;
 
-static const NeuronConnection parse_rom_word(const uint16_t rom_word) {
+static const NeuronConnection parse_rom_word(uint16_t rom_word) {
   uint8_t* rom_byte;
   rom_byte = (uint8_t*)&rom_word;
 
@@ -86,12 +87,13 @@ static void ctm_iterate_state(Connectome* const c) {
 //
 
 // Set flag in meta array to indicate if neuron discharged
-static void ctm_meta_flag_discharge(Connectome* const c, const uint8_t id, const uint8_t val) {
+static void ctm_meta_flag_discharge(Connectome* const c, const uint16_t id, const uint8_t val) {
   if(val == 0) {
     c->_meta[id] = 0b01111111 & c->_meta[id];
   }
   else if(val == 1) {
-    c->_meta[id] = 0b10000000 | c->_meta[id];
+    //c->_meta[id] = 0b10000000 | c->_meta[id];
+    c->_meta[id] = 0b10000000;
   }
 }
 
@@ -109,6 +111,10 @@ static void ctm_meta_handle_idle_neurons(Connectome* const c) {
     if(ctm_get_next_state(c, i) == ctm_get_current_state(c, i)) {
       // Doesnt matter if high bit is set as long as MAX_IDLE < 127
       c->_meta[i] += 1;
+      idle_ticks += 1;
+    }
+    else {
+      c->_meta[i] = high_val;
     }
 
     if(idle_ticks > MAX_IDLE) {
@@ -158,7 +164,7 @@ void ctm_ping_neuron(Connectome* const c, const uint16_t id) {
   const uint16_t address = READ_WORD(NEURAL_ROM, id + 1);
   const uint16_t len = READ_WORD(NEURAL_ROM, id + 2) - READ_WORD(NEURAL_ROM, id + 1);
   
-  for(uint8_t i = 0; i < len; i++) {
+  for(int8_t i = 0; i < len; i++) {
     NeuronConnection neuron_conn = parse_rom_word(READ_WORD(NEURAL_ROM, address + i));
 
     ctm_add_to_next_state(c, neuron_conn.id, neuron_conn.weight);
@@ -197,7 +203,6 @@ void ctm_neural_cycle(Connectome* const c, const uint16_t* stim_neuron, const ui
     }
   }
 
-  // Clean up
   ctm_meta_handle_idle_neurons(c);
   ctm_iterate_state(c);
 }
@@ -228,7 +233,7 @@ uint8_t ctm_get_discharge(Connectome* const c, const uint16_t id) {
 }
 
 void ctm_discharge_query(Connectome* const c, const uint16_t* input_id, uint8_t* query_result, const uint16_t len_query) {
-  for(uint16_t i; i < len_query; i++) {
+  for(uint16_t i = 0; i < len_query; i++) {
     uint16_t id = input_id[i];
     uint8_t discharged = c->_meta[id] >> 7;
     query_result[i] = discharged;
