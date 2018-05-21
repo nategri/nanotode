@@ -4,8 +4,10 @@
 //
 //
 
-#include "SDL.h"
 #include <stdlib.h>
+#include <time.h>
+
+#include "SDL.h"
 
 #include "defines.h"
 #include "connectome.h"
@@ -264,13 +266,26 @@ int main(int argc, char* argv[]) {
   Sprite sprite = {(int)worm.phys_state.x, (int)worm.phys_state.y, SPRITE_W, SPRITE_H, worm.phys_state.theta};
 
   // Burn in worm state
-  for(int i = 0; i < 1000; i++) {
+  srand(time(NULL));
+  int rand_int = (rand() % 1000) + 500;
+  for(int i = 0; i < rand_int; i++) {
       worm_update(&worm, chemotaxis, 8);
   }
 
   // Begin graphical simulation
   uint8_t nose_touching = 0;
-  for(int i=0; i < 500; i++) {
+  SDL_Event sdl_event;
+
+  // Main animation loop
+  for(int i=0; 1; i++) {
+
+    // Check for keypress---quit if there is one
+    if(SDL_PollEvent(&sdl_event)) {
+      if(sdl_event.type == SDL_KEYDOWN) {
+        break;
+      }
+    }
+
     SDL_SetRenderDrawColor(rend, 128, 128, 128, 255);
     SDL_RenderClear(rend);
 
@@ -304,4 +319,6 @@ int main(int argc, char* argv[]) {
     SDL_Delay(100);
     //break;
   }
+
+  SDL_Quit();
 }
