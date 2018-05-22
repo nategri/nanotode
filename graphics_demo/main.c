@@ -64,7 +64,7 @@ const uint16_t chemotaxis[] = {
 };
 
 void worm_phys_state_update(WormPhysicalState* const worm, MuscleState* const muscle) {
-  const double dt = 1.0;
+  const double dt = 0.0005;
 
   const double velocity = (muscle->left + muscle->right)/2.0;
 
@@ -83,7 +83,10 @@ void worm_phys_state_update(WormPhysicalState* const worm, MuscleState* const mu
 void sprite_update(Sprite* const sprite, Worm* const worm) {
   sprite->x = (int)worm->phys_state.x;
   sprite->y = (int)worm->phys_state.y;
-  sprite->theta = 90.0 + atan2(worm->phys_state.vy, worm->phys_state.vx)*180.0/M_PI;
+
+  if(!(worm->phys_state.vx == 0 && worm->phys_state.vy == 0)) {
+    sprite->theta = 90.0 + atan2(worm->phys_state.vy, worm->phys_state.vx)*180.0/M_PI;
+  }
   if((worm->bio_state.muscle.left < 0) && (worm->bio_state.muscle.right < 0)) {
     sprite->theta += 180;
   }
@@ -164,7 +167,6 @@ void worm_update(Worm* const worm, const uint16_t* stim_neuron, int len_stim_neu
   const double motor_total = MOTOR_A + MOTOR_B;
 
   worm->bio_state.motor_ab_fire_avg = (motor_neuron_sum + (motor_total*worm->bio_state.motor_ab_fire_avg))/(motor_total + 1.0);
-  printf("%f\n", worm->bio_state.motor_ab_fire_avg);
 
   // Set left and right totals, scale neck muscle contribution
   int32_t left_total = (6*left_neck_total) + norm_body_total;
@@ -177,14 +179,14 @@ void worm_update(Worm* const worm, const uint16_t* stim_neuron, int len_stim_neu
     right_total *= -1;
   }
 
-  worm->bio_state.muscle.left = left_total / 12;
-  worm->bio_state.muscle.right = right_total / 12;
+  worm->bio_state.muscle.left = left_total / 0.5;
+  worm->bio_state.muscle.right = right_total / 0.5;
 
   worm_phys_state_update(&worm->phys_state, &worm->bio_state.muscle);
 }
 
 double dot(double const* a, double const* b) {
-  return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+  return a[0]*b[0] + a[1]*b[1];
 }
 
 // Handles effects on worm's physical state if wall collision occurs
@@ -193,8 +195,8 @@ uint8_t collide_with_wall(Worm* const worm) {
   // Define normal vectors
   static const double nvec_bottom[] = {0.0, -1.0};
   static const double nvec_top[] = {0.0, 1.0};
-  static const double nvec_right[] = {1.0, 0.0};
-  static const double nvec_left[] = {-1.0, 0.0};
+  static const double nvec_right[] = {-1.0, 0.0};
+  static const double nvec_left[] = {1.0, 0.0};
 
   double v[] = {worm->phys_state.vx, worm->phys_state.vy};
   double dot_prod = 0;
@@ -213,25 +215,21 @@ uint8_t collide_with_wall(Worm* const worm) {
     dot_prod = dot(v, nvec_left);
     collide = 1;
   }
-  // Top
+  // Bottom
   if(worm->phys_state.y > WINDOW_Y - SPRITE_H) {
     worm->phys_state.y = WINDOW_Y - SPRITE_H;
-    dot_prod = dot(v, nvec_top);
-    collide = 1;
-  }
-  // Bottom
-  else if(worm->phys_state.y < 0.0) {
-    worm->phys_state.y = 0.0;
     dot_prod = dot(v, nvec_bottom);
     collide = 1;
   }
+  // Top
+  else if(worm->phys_state.y < 0.0) {
+    worm->phys_state.y = 0.0;
+    dot_prod = dot(v, nvec_top);
+    collide = 1;
+  }
 
-  /*if(collide) {
-    worm->phys_state.vx = 0.0;
-    worm->phys_state.vy = 0.0;
-  }*/
-
-  if(collide && (dot_prod > 0)) {
+  // Remember, its notice won't touch if it's backing up
+  if(collide && dot_prod < 0 && worm->bio_state.muscle.left > 0 && worm->bio_state.muscle.right > 0) {
     return 1;
   }
   else {
@@ -289,12 +287,22 @@ int main(int argc, char* argv[]) {
     SDL_SetRenderDrawColor(rend, 128, 128, 128, 255);
     SDL_RenderClear(rend);
 
+    if(i % 120 == 0) {
+      if(nose_touching) {
+        worm_update(&worm, nose_touch, 10);
+      }
+      else {
+        worm_update(&worm, chemotaxis, 8);
+      }
+    }
+    else {
+      worm_phys_state_update(&(worm.phys_state), &(worm.bio_state.muscle));
+    }
+
     if(nose_touching) {
-      worm_update(&worm, nose_touch, 10);
       SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
     }
     else {
-      worm_update(&worm, chemotaxis, 8);
       SDL_SetRenderDrawColor(rend, 0, 0, 0, 0);
     }
 
@@ -316,7 +324,7 @@ int main(int argc, char* argv[]) {
 
     SDL_RenderPresent(rend);
 
-    SDL_Delay(100);
+    //SDL_Delay(100);
     //break;
   }
 
