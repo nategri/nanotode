@@ -19,6 +19,12 @@
 #define SPRITE_W 40
 #define SPRITE_H 40
 
+//
+// Structs for worm sprite
+// and worm state
+//
+
+// Worm sprite
 typedef struct {
   int x;
   int y;
@@ -27,6 +33,7 @@ typedef struct {
   double theta;
 } Sprite;
 
+// Worm states
 typedef struct {
   double x;
   double y;
@@ -50,6 +57,213 @@ typedef struct {
   WormPhysicalState phys_state;
   WormBioState bio_state;
 } Worm;
+
+//
+// Structs for muscle state display
+//
+
+typedef struct {
+  SDL_Rect rect;
+  uint8_t rgba[4];
+} MuscleDisplayCell;
+
+typedef struct {
+  MuscleDisplayCell left_d_cell[19];
+  MuscleDisplayCell left_v_cell[19];
+  MuscleDisplayCell right_d_cell[19];
+  MuscleDisplayCell right_v_cell[19];
+} MuscleDisplay;
+
+// Set positions and default colors of muscle display cells
+void muscle_display_init(MuscleDisplay* const muscle_disp) {
+  int x = 20;
+  int y = 20;
+  const uint8_t w = 15;
+  const uint8_t h = 15;
+
+  // For neck muscles
+  for(uint8_t i = 0; i < 4; i++) {
+    muscle_disp->left_d_cell[i].rect = (SDL_Rect) {x, y, w, h};
+    muscle_disp->left_v_cell[i].rect = (SDL_Rect) {x+20, y, w, h};
+    muscle_disp->right_v_cell[i].rect = (SDL_Rect) {x+40, y, w, h};
+    muscle_disp->right_d_cell[i].rect = (SDL_Rect) {x+60, y, w, h};
+    y += 20;
+  }
+  
+  // For body muscles
+  y += 15;
+  for(uint8_t i = 4; i < 19; i++) {
+    muscle_disp->left_d_cell[i].rect = (SDL_Rect) {x, y, w, h};
+    muscle_disp->left_v_cell[i].rect = (SDL_Rect) {x+20, y, w, h};
+    muscle_disp->right_v_cell[i].rect = (SDL_Rect) {x+40, y, w, h};
+    muscle_disp->right_d_cell[i].rect = (SDL_Rect) {x+60, y, w, h};
+    y += 20;
+  }
+
+  // Assign default colors
+  for(uint8_t i = 0; i < 19; i++) {
+    for(uint8_t j = 0; j < 4; j++) {
+      muscle_disp->left_d_cell[i].rgba[j] = 255;
+      muscle_disp->left_v_cell[i].rgba[j] = 255;
+      muscle_disp->right_d_cell[i].rgba[j] = 255;
+      muscle_disp->right_v_cell[i].rgba[j] = 255;
+    }
+  }
+}
+
+void muscle_display_update(MuscleDisplay* const muscle_disp, Worm* const worm) {
+  Connectome* ctm = &worm->bio_state.connectome;
+
+  const double scale = 30.0;
+
+  //
+  // Neck muscles
+  //
+
+  // Dorsal
+  for(int8_t i = 0; i < 4; i++) {
+    double l_wt = ctm_get_weight(ctm, left_neck_muscle[i])*scale;
+    double r_wt = ctm_get_weight(ctm, right_neck_muscle[i])*scale;
+
+    if(l_wt < 0) {
+      muscle_disp->left_d_cell[i].rgba[0] = 255 + l_wt;
+      muscle_disp->left_d_cell[i].rgba[1] = 255 + l_wt;
+      muscle_disp->left_d_cell[i].rgba[2] = 255;
+    }
+    else {
+      muscle_disp->left_d_cell[i].rgba[0] = 255;
+      muscle_disp->left_d_cell[i].rgba[1] = 255 - l_wt;
+      muscle_disp->left_d_cell[i].rgba[2] = 255 - l_wt;
+    }
+
+    if(r_wt < 0) {
+      muscle_disp->right_d_cell[i].rgba[0] = 255 + r_wt;
+      muscle_disp->right_d_cell[i].rgba[1] = 255 + r_wt;
+      muscle_disp->right_d_cell[i].rgba[2] = 255;
+    }
+    else {
+      muscle_disp->right_d_cell[i].rgba[0] = 255;
+      muscle_disp->right_d_cell[i].rgba[1] = 255 - r_wt;
+      muscle_disp->right_d_cell[i].rgba[2] = 255 - r_wt;
+    }
+  }
+
+  // Ventral
+  uint8_t cell_idx;
+  for(uint8_t i = 4; i < 8; i++) {
+    double l_wt = ctm_get_weight(ctm, left_neck_muscle[i])*scale;
+    double r_wt = ctm_get_weight(ctm, right_neck_muscle[i])*scale;
+
+    cell_idx = i - 4;
+
+    if(l_wt < 0) {
+      muscle_disp->left_v_cell[cell_idx].rgba[0] = 255 + l_wt;
+      muscle_disp->left_v_cell[cell_idx].rgba[1] = 255 + l_wt;
+      muscle_disp->left_v_cell[cell_idx].rgba[2] = 255;
+    }
+    else {
+      muscle_disp->left_v_cell[cell_idx].rgba[0] = 255;
+      muscle_disp->left_v_cell[cell_idx].rgba[1] = 255 - l_wt;
+      muscle_disp->left_v_cell[cell_idx].rgba[2] = 255 - l_wt;
+    }
+
+    if(r_wt < 0) {
+      muscle_disp->right_v_cell[cell_idx].rgba[0] = 255 + r_wt;
+      muscle_disp->right_v_cell[cell_idx].rgba[1] = 255 + r_wt;
+      muscle_disp->right_v_cell[cell_idx].rgba[2] = 255;
+    }
+    else {
+      muscle_disp->right_v_cell[cell_idx].rgba[0] = 255;
+      muscle_disp->right_v_cell[cell_idx].rgba[1] = 255 - r_wt;
+      muscle_disp->right_v_cell[cell_idx].rgba[2] = 255 - r_wt;
+    }
+  }
+
+  //
+  // Body muscles
+  //
+  for(int8_t i = 0; i < 15; i++) {
+    double l_wt = ctm_get_weight(ctm, left_body_muscle[i])*scale;
+    double r_wt = ctm_get_weight(ctm, right_body_muscle[i])*scale;
+
+    cell_idx = i + 4;
+
+    if(l_wt < 0) {
+      muscle_disp->left_d_cell[cell_idx].rgba[0] = 255 + l_wt;
+      muscle_disp->left_d_cell[cell_idx].rgba[1] = 255 + l_wt;
+      muscle_disp->left_d_cell[cell_idx].rgba[2] = 255;
+    }
+    else {
+      muscle_disp->left_d_cell[cell_idx].rgba[0] = 255;
+      muscle_disp->left_d_cell[cell_idx].rgba[1] = 255 - l_wt;
+      muscle_disp->left_d_cell[cell_idx].rgba[2] = 255 - l_wt;
+    }
+
+    if(r_wt < 0) {
+      muscle_disp->right_d_cell[cell_idx].rgba[0] = 255 + r_wt;
+      muscle_disp->right_d_cell[cell_idx].rgba[1] = 255 + r_wt;
+      muscle_disp->right_d_cell[cell_idx].rgba[2] = 255;
+    }
+    else {
+      muscle_disp->right_d_cell[cell_idx].rgba[0] = 255;
+      muscle_disp->right_d_cell[cell_idx].rgba[1] = 255 - r_wt;
+      muscle_disp->right_d_cell[cell_idx].rgba[2] = 255 - r_wt;
+    }
+  }
+
+  // Ventral
+  for(uint8_t i = 15; i < 30; i++) {
+    double l_wt = ctm_get_weight(ctm, left_body_muscle[i])*scale;
+    double r_wt = ctm_get_weight(ctm, right_body_muscle[i])*scale;
+
+    cell_idx = i + 4 - 15;
+
+    if(l_wt < 0) {
+      muscle_disp->left_v_cell[cell_idx].rgba[0] = 255 + l_wt;
+      muscle_disp->left_v_cell[cell_idx].rgba[1] = 255 + l_wt;
+      muscle_disp->left_v_cell[cell_idx].rgba[2] = 255;
+    }
+    else {
+      muscle_disp->left_v_cell[cell_idx].rgba[0] = 255;
+      muscle_disp->left_v_cell[cell_idx].rgba[1] = 255 - l_wt;
+      muscle_disp->left_v_cell[cell_idx].rgba[2] = 255 - l_wt;
+    }
+
+    if(r_wt < 0) {
+      muscle_disp->right_v_cell[cell_idx].rgba[0] = 255 + r_wt;
+      muscle_disp->right_v_cell[cell_idx].rgba[1] = 255 + r_wt;
+      muscle_disp->right_v_cell[cell_idx].rgba[2] = 255;
+    }
+    else {
+      muscle_disp->right_v_cell[cell_idx].rgba[0] = 255;
+      muscle_disp->right_v_cell[cell_idx].rgba[1] = 255 - r_wt;
+      muscle_disp->right_v_cell[cell_idx].rgba[2] = 255 - r_wt;
+    }
+  }
+
+}
+
+void muscle_display_draw(SDL_Renderer* rend, MuscleDisplay* const muscle_disp) {
+  for(uint8_t i = 0; i < 19; i++) {
+    uint8_t* rgba;
+
+    rgba = muscle_disp->left_d_cell[i].rgba;
+    SDL_SetRenderDrawColor(rend, rgba[0], rgba[1], rgba[2], rgba[3]);
+    SDL_RenderFillRect(rend, &(muscle_disp->left_d_cell[i].rect));
+
+    rgba = muscle_disp->left_v_cell[i].rgba;
+    SDL_SetRenderDrawColor(rend, rgba[0], rgba[1], rgba[2], rgba[3]);
+    SDL_RenderFillRect(rend, &(muscle_disp->left_v_cell[i].rect));
+
+    rgba = muscle_disp->right_d_cell[i].rgba;
+    SDL_SetRenderDrawColor(rend, rgba[0], rgba[1], rgba[2], rgba[3]);
+    SDL_RenderFillRect(rend, &(muscle_disp->right_d_cell[i].rect));
+
+    rgba = muscle_disp->right_v_cell[i].rgba;
+    SDL_SetRenderDrawColor(rend, rgba[0], rgba[1], rgba[2], rgba[3]);
+    SDL_RenderFillRect(rend, &(muscle_disp->right_v_cell[i].rect));
+  }
+}
 
 // Arrays for neurons describing 'nose touch' and
 // food-seeking behaviors
@@ -254,6 +468,10 @@ int main(int argc, char* argv[]) {
   tex = SDL_CreateTextureFromSurface(rend, surf);
   SDL_FreeSurface(surf);
 
+  // Create and initialize muscle display
+  MuscleDisplay muscle_display;
+  muscle_display_init(&muscle_display);
+
   // Create and initialize worm
   Worm worm;
   worm.phys_state = (WormPhysicalState) {WINDOW_X/2, WINDOW_Y/2, 0.0, 0.0, 90.0};
@@ -318,9 +536,11 @@ int main(int argc, char* argv[]) {
     sprite_rect.w = sprite.w;
     sprite_rect.h = sprite.h;
 
-
     SDL_RenderCopyEx(rend, tex, NULL, &sprite_rect, sprite.theta, NULL, SDL_FLIP_NONE);
     SDL_RenderDrawRect(rend, &sprite_rect);
+
+    muscle_display_update(&muscle_display, &worm);
+    muscle_display_draw(rend, &muscle_display);
 
     SDL_RenderPresent(rend);
 
