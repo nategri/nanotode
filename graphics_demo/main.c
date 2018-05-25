@@ -111,6 +111,19 @@ void muscle_display_init(MuscleDisplay* const muscle_disp) {
   }
 }
 
+void muscle_display_cell_color(MuscleDisplayCell* const cell, uint8_t i, float weight) {
+  if(weight < 0) {
+    cell[i].rgba[0] = 255 + weight;
+    cell[i].rgba[1] = 255 + weight;
+    cell[i].rgba[2] = 255;
+  }
+  else {
+    cell[i].rgba[0] = 255;
+    cell[i].rgba[1] = 255 - weight;
+    cell[i].rgba[2] = 255 - weight;
+  }
+}
+
 void muscle_display_update(MuscleDisplay* const muscle_disp, Worm* const worm) {
   Connectome* ctm = &worm->bio_state.connectome;
 
@@ -125,27 +138,8 @@ void muscle_display_update(MuscleDisplay* const muscle_disp, Worm* const worm) {
     double l_wt = ctm_get_weight(ctm, left_neck_muscle[i])*scale;
     double r_wt = ctm_get_weight(ctm, right_neck_muscle[i])*scale;
 
-    if(l_wt < 0) {
-      muscle_disp->left_d_cell[i].rgba[0] = 255 + l_wt;
-      muscle_disp->left_d_cell[i].rgba[1] = 255 + l_wt;
-      muscle_disp->left_d_cell[i].rgba[2] = 255;
-    }
-    else {
-      muscle_disp->left_d_cell[i].rgba[0] = 255;
-      muscle_disp->left_d_cell[i].rgba[1] = 255 - l_wt;
-      muscle_disp->left_d_cell[i].rgba[2] = 255 - l_wt;
-    }
-
-    if(r_wt < 0) {
-      muscle_disp->right_d_cell[i].rgba[0] = 255 + r_wt;
-      muscle_disp->right_d_cell[i].rgba[1] = 255 + r_wt;
-      muscle_disp->right_d_cell[i].rgba[2] = 255;
-    }
-    else {
-      muscle_disp->right_d_cell[i].rgba[0] = 255;
-      muscle_disp->right_d_cell[i].rgba[1] = 255 - r_wt;
-      muscle_disp->right_d_cell[i].rgba[2] = 255 - r_wt;
-    }
+    muscle_display_cell_color(muscle_disp->left_d_cell, i, l_wt);
+    muscle_display_cell_color(muscle_disp->right_d_cell, i, r_wt);
   }
 
   // Ventral
@@ -156,59 +150,23 @@ void muscle_display_update(MuscleDisplay* const muscle_disp, Worm* const worm) {
 
     cell_idx = i - 4;
 
-    if(l_wt < 0) {
-      muscle_disp->left_v_cell[cell_idx].rgba[0] = 255 + l_wt;
-      muscle_disp->left_v_cell[cell_idx].rgba[1] = 255 + l_wt;
-      muscle_disp->left_v_cell[cell_idx].rgba[2] = 255;
-    }
-    else {
-      muscle_disp->left_v_cell[cell_idx].rgba[0] = 255;
-      muscle_disp->left_v_cell[cell_idx].rgba[1] = 255 - l_wt;
-      muscle_disp->left_v_cell[cell_idx].rgba[2] = 255 - l_wt;
-    }
-
-    if(r_wt < 0) {
-      muscle_disp->right_v_cell[cell_idx].rgba[0] = 255 + r_wt;
-      muscle_disp->right_v_cell[cell_idx].rgba[1] = 255 + r_wt;
-      muscle_disp->right_v_cell[cell_idx].rgba[2] = 255;
-    }
-    else {
-      muscle_disp->right_v_cell[cell_idx].rgba[0] = 255;
-      muscle_disp->right_v_cell[cell_idx].rgba[1] = 255 - r_wt;
-      muscle_disp->right_v_cell[cell_idx].rgba[2] = 255 - r_wt;
-    }
+    muscle_display_cell_color(muscle_disp->left_v_cell, cell_idx, l_wt);
+    muscle_display_cell_color(muscle_disp->right_v_cell, cell_idx, r_wt);
   }
 
   //
   // Body muscles
   //
+
+  // Dorsal
   for(int8_t i = 0; i < 15; i++) {
     double l_wt = ctm_get_weight(ctm, left_body_muscle[i])*scale;
     double r_wt = ctm_get_weight(ctm, right_body_muscle[i])*scale;
 
     cell_idx = i + 4;
 
-    if(l_wt < 0) {
-      muscle_disp->left_d_cell[cell_idx].rgba[0] = 255 + l_wt;
-      muscle_disp->left_d_cell[cell_idx].rgba[1] = 255 + l_wt;
-      muscle_disp->left_d_cell[cell_idx].rgba[2] = 255;
-    }
-    else {
-      muscle_disp->left_d_cell[cell_idx].rgba[0] = 255;
-      muscle_disp->left_d_cell[cell_idx].rgba[1] = 255 - l_wt;
-      muscle_disp->left_d_cell[cell_idx].rgba[2] = 255 - l_wt;
-    }
-
-    if(r_wt < 0) {
-      muscle_disp->right_d_cell[cell_idx].rgba[0] = 255 + r_wt;
-      muscle_disp->right_d_cell[cell_idx].rgba[1] = 255 + r_wt;
-      muscle_disp->right_d_cell[cell_idx].rgba[2] = 255;
-    }
-    else {
-      muscle_disp->right_d_cell[cell_idx].rgba[0] = 255;
-      muscle_disp->right_d_cell[cell_idx].rgba[1] = 255 - r_wt;
-      muscle_disp->right_d_cell[cell_idx].rgba[2] = 255 - r_wt;
-    }
+    muscle_display_cell_color(muscle_disp->left_d_cell, cell_idx, l_wt);
+    muscle_display_cell_color(muscle_disp->right_d_cell, cell_idx, r_wt);
   }
 
   // Ventral
@@ -218,29 +176,9 @@ void muscle_display_update(MuscleDisplay* const muscle_disp, Worm* const worm) {
 
     cell_idx = i + 4 - 15;
 
-    if(l_wt < 0) {
-      muscle_disp->left_v_cell[cell_idx].rgba[0] = 255 + l_wt;
-      muscle_disp->left_v_cell[cell_idx].rgba[1] = 255 + l_wt;
-      muscle_disp->left_v_cell[cell_idx].rgba[2] = 255;
-    }
-    else {
-      muscle_disp->left_v_cell[cell_idx].rgba[0] = 255;
-      muscle_disp->left_v_cell[cell_idx].rgba[1] = 255 - l_wt;
-      muscle_disp->left_v_cell[cell_idx].rgba[2] = 255 - l_wt;
-    }
-
-    if(r_wt < 0) {
-      muscle_disp->right_v_cell[cell_idx].rgba[0] = 255 + r_wt;
-      muscle_disp->right_v_cell[cell_idx].rgba[1] = 255 + r_wt;
-      muscle_disp->right_v_cell[cell_idx].rgba[2] = 255;
-    }
-    else {
-      muscle_disp->right_v_cell[cell_idx].rgba[0] = 255;
-      muscle_disp->right_v_cell[cell_idx].rgba[1] = 255 - r_wt;
-      muscle_disp->right_v_cell[cell_idx].rgba[2] = 255 - r_wt;
-    }
+    muscle_display_cell_color(muscle_disp->left_v_cell, cell_idx, l_wt);
+    muscle_display_cell_color(muscle_disp->right_v_cell, cell_idx, r_wt);
   }
-
 }
 
 void muscle_display_draw(SDL_Renderer* rend, MuscleDisplay* const muscle_disp) {
