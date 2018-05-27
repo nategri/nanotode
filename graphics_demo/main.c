@@ -78,26 +78,27 @@ typedef struct {
 void muscle_display_init(MuscleDisplay* const muscle_disp) {
   int x = 20;
   int y = 20;
-  const uint8_t w = 15;
-  const uint8_t h = 15;
+  const uint8_t w = 10;
+  const uint8_t h = 10;
+  const uint8_t pad = 12;
 
   // For neck muscles
   for(uint8_t i = 0; i < 4; i++) {
     muscle_disp->left_d_cell[i].rect = (SDL_Rect) {x, y, w, h};
-    muscle_disp->left_v_cell[i].rect = (SDL_Rect) {x+20, y, w, h};
-    muscle_disp->right_v_cell[i].rect = (SDL_Rect) {x+40, y, w, h};
-    muscle_disp->right_d_cell[i].rect = (SDL_Rect) {x+60, y, w, h};
-    y += 20;
+    muscle_disp->left_v_cell[i].rect = (SDL_Rect) {x+pad, y, w, h};
+    muscle_disp->right_v_cell[i].rect = (SDL_Rect) {x+2*pad, y, w, h};
+    muscle_disp->right_d_cell[i].rect = (SDL_Rect) {x+3*pad, y, w, h};
+    y += pad;
   }
   
   // For body muscles
-  y += 15;
+  y += h;
   for(uint8_t i = 4; i < 19; i++) {
     muscle_disp->left_d_cell[i].rect = (SDL_Rect) {x, y, w, h};
-    muscle_disp->left_v_cell[i].rect = (SDL_Rect) {x+20, y, w, h};
-    muscle_disp->right_v_cell[i].rect = (SDL_Rect) {x+40, y, w, h};
-    muscle_disp->right_d_cell[i].rect = (SDL_Rect) {x+60, y, w, h};
-    y += 20;
+    muscle_disp->left_v_cell[i].rect = (SDL_Rect) {x+pad, y, w, h};
+    muscle_disp->right_v_cell[i].rect = (SDL_Rect) {x+2*pad, y, w, h};
+    muscle_disp->right_d_cell[i].rect = (SDL_Rect) {x+3*pad, y, w, h};
+    y += pad;
   }
 
   // Assign default colors
