@@ -45,6 +45,9 @@ typedef struct {
 typedef struct {
   int left;
   int right;
+  int meta_left_neck;
+  int meta_right_neck;
+  int meta_body;
 } MuscleState;
 
 typedef struct {
@@ -59,7 +62,7 @@ typedef struct {
 } Worm;
 
 //
-// Structs for muscle state display
+// Structs for muscle cell state display
 //
 
 typedef struct {
@@ -74,12 +77,80 @@ typedef struct {
   MuscleDisplayCell right_v_cell[19];
 } MuscleDisplay;
 
+//
+// Structs movement component display
+//
+
+typedef struct {
+  SDL_Rect left_body;
+  SDL_Rect right_body;
+  SDL_Rect left_neck;
+  SDL_Rect right_neck;
+  uint8_t color_body[4];
+  uint8_t color_neck[4];
+} MotionComponentDisplay;
+
+// Set position and colors of motion component display
+void motion_component_display_init(MotionComponentDisplay* const motion_comp_disp) {
+  // Make this position stuff less hardcoded, eh?
+  motion_comp_disp->left_body = (SDL_Rect) {20, 160, 22, 0};
+  motion_comp_disp->left_neck = (SDL_Rect) {20, 160, 22, 0};
+
+  motion_comp_disp->right_body = (SDL_Rect) {44, 160, 22, 0};
+  motion_comp_disp->right_neck = (SDL_Rect) {44, 160, 22, 0};
+
+  motion_comp_disp->color_neck[0] = 180;
+  motion_comp_disp->color_neck[1] = 76;
+  motion_comp_disp->color_neck[2] = 211;
+  motion_comp_disp->color_neck[3] = 255;
+
+  motion_comp_disp->color_body[0] = 140;
+  motion_comp_disp->color_body[1] = 59;
+  motion_comp_disp->color_body[2] = 165;
+  motion_comp_disp->color_body[3] = 255;
+}
+
+void motion_component_display_update(MotionComponentDisplay* const motion_component_disp, Worm* const worm) {
+  const double scale = 0.5;
+
+  double left_body_comp = worm->bio_state.muscle.meta_body;
+  double right_body_comp = worm->bio_state.muscle.meta_body;
+  double left_neck_comp = worm->bio_state.muscle.meta_left_neck;
+  double right_neck_comp = worm->bio_state.muscle.meta_right_neck;
+
+  motion_component_disp->left_body.h = (int) (left_body_comp*scale);
+  motion_component_disp->left_body.y = 160 - (int) (left_body_comp*scale);
+
+  motion_component_disp->right_body.h = (int) (right_body_comp*scale);
+  motion_component_disp->right_body.y = 160 - (int) (right_body_comp*scale);
+
+  motion_component_disp->left_neck.h = (int) left_neck_comp*scale;
+  motion_component_disp->left_neck.y = 160 - (((int) left_neck_comp*scale) + motion_component_disp->left_body.h);
+
+  motion_component_disp->right_neck.h = (int) right_neck_comp*scale;
+  motion_component_disp->right_neck.y = 160 - (((int) right_neck_comp*scale) + motion_component_disp->right_body.h);
+}
+void motion_component_display_draw(SDL_Renderer* rend, MotionComponentDisplay* const motion_component_disp) {
+  uint8_t* rgba;
+
+  rgba = motion_component_disp->color_body;
+  SDL_SetRenderDrawColor(rend, rgba[0], rgba[1], rgba[2], rgba[3]);
+  SDL_RenderFillRect(rend, &(motion_component_disp->left_body));
+  SDL_RenderFillRect(rend, &(motion_component_disp->right_body));
+
+  rgba = motion_component_disp->color_neck;
+  SDL_SetRenderDrawColor(rend, rgba[0], rgba[1], rgba[2], rgba[3]);
+  SDL_RenderFillRect(rend, &(motion_component_disp->left_neck));
+  SDL_RenderFillRect(rend, &(motion_component_disp->right_neck));
+}
+
 // Set positions and default colors of muscle display cells
 void muscle_display_init(MuscleDisplay* const muscle_disp) {
   int x = 20;
-  int y = 20;
+  int y = 180;
   const uint8_t w = 10;
   const uint8_t h = 10;
+  // Pad doesn't quite mean what you think it did (it's really "2")
   const uint8_t pad = 12;
 
   // For neck muscles
@@ -335,6 +406,11 @@ void worm_update(Worm* const worm, const uint16_t* stim_neuron, int len_stim_neu
   worm->bio_state.muscle.left = left_total / 0.5;
   worm->bio_state.muscle.right = right_total / 0.5;
 
+  // Record meta state for visualization purposes
+  worm->bio_state.muscle.meta_left_neck = 6*left_neck_total;
+  worm->bio_state.muscle.meta_right_neck = 6*right_neck_total;
+  worm->bio_state.muscle.meta_body = norm_body_total;
+
   worm_phys_state_update(&worm->phys_state, &worm->bio_state.muscle);
 }
 
@@ -411,11 +487,15 @@ int main(int argc, char* argv[]) {
   MuscleDisplay muscle_display;
   muscle_display_init(&muscle_display);
 
+  // Create and initialize motion component
+  MotionComponentDisplay motion_component_display;
+  motion_component_display_init(&motion_component_display);
+
   // Create and initialize worm
   Worm worm;
   worm.phys_state = (WormPhysicalState) {WINDOW_X/2, WINDOW_Y/2, 0.0, 0.0, 90.0};
   ctm_init(&worm.bio_state.connectome);
-  worm.bio_state.muscle = (MuscleState) {0, 0};
+  worm.bio_state.muscle = (MuscleState) {0, 0, 0, 0, 0};
   worm.bio_state.motor_ab_fire_avg = 5.25;
 
   Sprite sprite = {(int)worm.phys_state.x, (int)worm.phys_state.y, SPRITE_W, SPRITE_H, worm.phys_state.theta};
@@ -477,6 +557,9 @@ int main(int argc, char* argv[]) {
 
     SDL_RenderCopyEx(rend, tex, NULL, &sprite_rect, sprite.theta, NULL, SDL_FLIP_NONE);
     SDL_RenderDrawRect(rend, &sprite_rect);
+
+    motion_component_display_update(&motion_component_display, &worm);
+    motion_component_display_draw(rend, &motion_component_display);
 
     muscle_display_update(&muscle_display, &worm);
     muscle_display_draw(rend, &muscle_display);
