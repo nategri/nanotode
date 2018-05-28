@@ -373,6 +373,26 @@ void worm_update(Worm* const worm, const uint16_t* stim_neuron, int len_stim_neu
     right_neck_total += right_val;
   }
 
+  // Combine neck contribution with body and log meta information
+  // for motion component visualizer
+  int32_t neck_contribution = left_neck_total - right_neck_total;
+  int32_t left_total;
+  int32_t right_total;
+  if(neck_contribution < 0) {
+    left_total = 6*abs(neck_contribution) + norm_body_total;
+    right_total = norm_body_total;
+    worm->bio_state.muscle.meta_left_neck = 6*abs(neck_contribution);
+    worm->bio_state.muscle.meta_right_neck = 0;
+  }
+  else {
+    left_total = norm_body_total;
+    right_total = 6*abs(neck_contribution) + norm_body_total;
+    worm->bio_state.muscle.meta_left_neck = 0;
+    worm->bio_state.muscle.meta_right_neck = 6*abs(neck_contribution);
+  }
+
+  worm->bio_state.muscle.meta_body = norm_body_total;
+
   // Log A and B type motor neuron activity
   double motor_neuron_sum = 0;
 
@@ -392,10 +412,6 @@ void worm_update(Worm* const worm, const uint16_t* stim_neuron, int len_stim_neu
 
   worm->bio_state.motor_ab_fire_avg = (motor_neuron_sum + (motor_total*worm->bio_state.motor_ab_fire_avg))/(motor_total + 1.0);
 
-  // Set left and right totals, scale neck muscle contribution
-  int32_t left_total = (6*left_neck_total) + norm_body_total;
-  int32_t right_total = (6*right_neck_total) + norm_body_total;
-
   if(worm->bio_state.motor_ab_fire_avg > 5.5) { // Magic number read off from c_matoduino simulation
     //printf("%f\n", worm->bio_state.motor_ab_fire_avg);
     //printf("reverse");
@@ -406,10 +422,6 @@ void worm_update(Worm* const worm, const uint16_t* stim_neuron, int len_stim_neu
   worm->bio_state.muscle.left = left_total / 0.5;
   worm->bio_state.muscle.right = right_total / 0.5;
 
-  // Record meta state for visualization purposes
-  worm->bio_state.muscle.meta_left_neck = 6*left_neck_total;
-  worm->bio_state.muscle.meta_right_neck = 6*right_neck_total;
-  worm->bio_state.muscle.meta_body = norm_body_total;
 
   worm_phys_state_update(&worm->phys_state, &worm->bio_state.muscle);
 }
