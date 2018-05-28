@@ -82,22 +82,35 @@ typedef struct {
 //
 
 typedef struct {
+  // Lower left anchor points for plot
+  uint16_t x_anchor;
+  uint16_t y_anchor;
+  // Rectangles that comprise plot
   SDL_Rect left_body;
   SDL_Rect right_body;
   SDL_Rect left_neck;
   SDL_Rect right_neck;
+  // Colors
   uint8_t color_body[4];
   uint8_t color_neck[4];
 } MotionComponentDisplay;
 
 // Set position and colors of motion component display
 void motion_component_display_init(MotionComponentDisplay* const motion_comp_disp) {
-  // Make this position stuff less hardcoded, eh?
-  motion_comp_disp->left_body = (SDL_Rect) {20, 160, 22, 0};
-  motion_comp_disp->left_neck = (SDL_Rect) {20, 160, 22, 0};
+  static const uint32_t x_anchor = 20;
+  static const uint32_t y_anchor = 160;
+  static const uint8_t w = 22;
+  static const uint8_t h = 0;
+  static const uint8_t pad = 2;
 
-  motion_comp_disp->right_body = (SDL_Rect) {44, 160, 22, 0};
-  motion_comp_disp->right_neck = (SDL_Rect) {44, 160, 22, 0};
+  motion_comp_disp->x_anchor = x_anchor;
+  motion_comp_disp->y_anchor = y_anchor;
+
+  motion_comp_disp->left_body = (SDL_Rect) {x_anchor, y_anchor, w, h};
+  motion_comp_disp->left_neck = (SDL_Rect) {x_anchor, y_anchor, w, h};
+
+  motion_comp_disp->right_body = (SDL_Rect) {x_anchor+w+pad, y_anchor, w, h};
+  motion_comp_disp->right_neck = (SDL_Rect) {x_anchor+w+pad, y_anchor, w, h};
 
   motion_comp_disp->color_neck[0] = 180;
   motion_comp_disp->color_neck[1] = 76;
@@ -118,17 +131,19 @@ void motion_component_display_update(MotionComponentDisplay* const motion_compon
   double left_neck_comp = worm->bio_state.muscle.meta_left_neck;
   double right_neck_comp = worm->bio_state.muscle.meta_right_neck;
 
+  const uint32_t y_anchor = motion_component_disp->y_anchor;
+
   motion_component_disp->left_body.h = (int) (left_body_comp*scale);
-  motion_component_disp->left_body.y = 160 - (int) (left_body_comp*scale);
+  motion_component_disp->left_body.y = y_anchor - (int) (left_body_comp*scale);
 
   motion_component_disp->right_body.h = (int) (right_body_comp*scale);
-  motion_component_disp->right_body.y = 160 - (int) (right_body_comp*scale);
+  motion_component_disp->right_body.y = y_anchor - (int) (right_body_comp*scale);
 
   motion_component_disp->left_neck.h = (int) left_neck_comp*scale;
-  motion_component_disp->left_neck.y = 160 - (((int) left_neck_comp*scale) + motion_component_disp->left_body.h);
+  motion_component_disp->left_neck.y = y_anchor - (((int) left_neck_comp*scale) + motion_component_disp->left_body.h);
 
   motion_component_disp->right_neck.h = (int) right_neck_comp*scale;
-  motion_component_disp->right_neck.y = 160 - (((int) right_neck_comp*scale) + motion_component_disp->right_body.h);
+  motion_component_disp->right_neck.y = y_anchor - (((int) right_neck_comp*scale) + motion_component_disp->right_body.h);
 }
 void motion_component_display_draw(SDL_Renderer* rend, MotionComponentDisplay* const motion_component_disp) {
   uint8_t* rgba;
@@ -148,28 +163,28 @@ void motion_component_display_draw(SDL_Renderer* rend, MotionComponentDisplay* c
 void muscle_display_init(MuscleDisplay* const muscle_disp) {
   int x = 20;
   int y = 180;
-  const uint8_t w = 10;
-  const uint8_t h = 10;
+  static const uint8_t w = 10;
+  static const uint8_t h = 10;
   // Pad doesn't quite mean what you think it did (it's really "2")
-  const uint8_t pad = 12;
+  static const uint8_t pad = 2;
 
   // For neck muscles
   for(uint8_t i = 0; i < 4; i++) {
     muscle_disp->left_d_cell[i].rect = (SDL_Rect) {x, y, w, h};
-    muscle_disp->left_v_cell[i].rect = (SDL_Rect) {x+pad, y, w, h};
-    muscle_disp->right_v_cell[i].rect = (SDL_Rect) {x+2*pad, y, w, h};
-    muscle_disp->right_d_cell[i].rect = (SDL_Rect) {x+3*pad, y, w, h};
-    y += pad;
+    muscle_disp->left_v_cell[i].rect = (SDL_Rect) {x+1*(w+pad), y, w, h};
+    muscle_disp->right_v_cell[i].rect = (SDL_Rect) {x+2*(w+pad), y, w, h};
+    muscle_disp->right_d_cell[i].rect = (SDL_Rect) {x+3*(w+pad), y, w, h};
+    y += (h+pad);
   }
   
   // For body muscles
   y += h;
   for(uint8_t i = 4; i < 19; i++) {
     muscle_disp->left_d_cell[i].rect = (SDL_Rect) {x, y, w, h};
-    muscle_disp->left_v_cell[i].rect = (SDL_Rect) {x+pad, y, w, h};
-    muscle_disp->right_v_cell[i].rect = (SDL_Rect) {x+2*pad, y, w, h};
-    muscle_disp->right_d_cell[i].rect = (SDL_Rect) {x+3*pad, y, w, h};
-    y += pad;
+    muscle_disp->left_v_cell[i].rect = (SDL_Rect) {x+1*(w+pad), y, w, h};
+    muscle_disp->right_v_cell[i].rect = (SDL_Rect) {x+2*(w+pad), y, w, h};
+    muscle_disp->right_d_cell[i].rect = (SDL_Rect) {x+3*(w+pad), y, w, h};
+    y += (h+pad);
   }
 
   // Assign default colors
@@ -199,7 +214,7 @@ void muscle_display_cell_color(MuscleDisplayCell* const cell, uint8_t i, float w
 void muscle_display_update(MuscleDisplay* const muscle_disp, Worm* const worm) {
   Connectome* ctm = &worm->bio_state.connectome;
 
-  const double scale = 30.0;
+  static const double scale = 30.0;
 
   //
   // Neck muscles
