@@ -59,6 +59,9 @@ typedef struct {
 typedef struct {
   WormPhysicalState phys_state;
   WormBioState bio_state;
+  Sprite sprite;
+  SDL_Rect sprite_rect;
+  uint8_t nose_touching;
 } Worm;
 
 //
@@ -319,16 +322,21 @@ void worm_phys_state_update(WormPhysicalState* const worm, MuscleState* const mu
   worm->y += worm->vy*dt;
 }
 
-void sprite_update(Sprite* const sprite, Worm* const worm) {
-  sprite->x = (int)worm->phys_state.x;
-  sprite->y = (int)worm->phys_state.y;
+void sprite_update(Worm* const worm) {
+  worm->sprite.x = (int)worm->phys_state.x;
+  worm->sprite.y = (int)worm->phys_state.y;
 
   if(!(worm->phys_state.vx == 0 && worm->phys_state.vy == 0)) {
-    sprite->theta = 90.0 + atan2(worm->phys_state.vy, worm->phys_state.vx)*180.0/M_PI;
+    worm->sprite.theta = 90.0 + atan2(worm->phys_state.vy, worm->phys_state.vx)*180.0/M_PI;
   }
   if((worm->bio_state.muscle.left < 0) && (worm->bio_state.muscle.right < 0)) {
-    sprite->theta += 180;
+    worm->sprite.theta += 180;
   }
+
+  worm->sprite_rect.x = worm->sprite.x;
+  worm->sprite_rect.y = worm->sprite.y;
+  worm->sprite_rect.w = worm->sprite.w;
+  worm->sprite_rect.h = worm->sprite.h;
 }
 
 void worm_update(Worm* const worm, const uint16_t* stim_neuron, int len_stim_neuron) {
@@ -484,7 +492,7 @@ uint8_t collide_with_wall(Worm* const worm) {
     collide = 1;
   }
 
-  // Remember, its notice won't touch if it's backing up
+  // Remember, its won't touch if it's backing up
   if(collide && dot_prod < 0 && worm->bio_state.muscle.left > 0 && worm->bio_state.muscle.right > 0) {
     return 1;
   }
@@ -494,6 +502,9 @@ uint8_t collide_with_wall(Worm* const worm) {
 }
 
 int main(int argc, char* argv[]) {
+  // Seed RNG
+  srand(time(NULL));
+
   // Initialize graphics window
   SDL_Window* win;
   SDL_Renderer* rend;
@@ -520,22 +531,23 @@ int main(int argc, char* argv[]) {
 
   // Create and initialize worm
   Worm worm;
-  worm.phys_state = (WormPhysicalState) {WINDOW_X/2, WINDOW_Y/2, 0.0, 0.0, 90.0};
+  uint32_t worm_x_init = (rand() % (int)(0.75*WINDOW_X)) + (int)(.125*WINDOW_X);
+  uint32_t worm_y_init = (rand() % (int)(0.75*WINDOW_Y)) + (int)(.125*WINDOW_Y);
+  double worm_theta_init = rand() % 360;
+  worm.phys_state = (WormPhysicalState) {worm_x_init, worm_y_init, 0.0, 0.0, worm_theta_init};
   ctm_init(&worm.bio_state.connectome);
   worm.bio_state.muscle = (MuscleState) {0, 0, 0, 0, 0};
   worm.bio_state.motor_ab_fire_avg = 5.25;
-
-  Sprite sprite = {(int)worm.phys_state.x, (int)worm.phys_state.y, SPRITE_W, SPRITE_H, worm.phys_state.theta};
+  worm.nose_touching = 0;
+  worm.sprite = (Sprite) {(int)worm.phys_state.x, (int)worm.phys_state.y, SPRITE_W, SPRITE_H, worm.phys_state.theta};
 
   // Burn in worm state
-  srand(time(NULL));
   int rand_int = (rand() % 1000) + 500;
   for(int i = 0; i < rand_int; i++) {
       worm_update(&worm, chemotaxis, 8);
   }
 
   // Begin graphical simulation
-  uint8_t nose_touching = 0;
   SDL_Event sdl_event;
 
   // Main animation loop
@@ -552,7 +564,7 @@ int main(int argc, char* argv[]) {
     SDL_RenderClear(rend);
 
     if(i % 120 == 0) {
-      if(nose_touching) {
+      if(worm.nose_touching) {
         worm_update(&worm, nose_touch, 10);
       }
       else {
@@ -563,7 +575,7 @@ int main(int argc, char* argv[]) {
       worm_phys_state_update(&(worm.phys_state), &(worm.bio_state.muscle));
     }
 
-    if(nose_touching) {
+    if(worm.nose_touching) {
       SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
     }
     else {
@@ -572,18 +584,12 @@ int main(int argc, char* argv[]) {
 
     //printf("%d %d\n", worm.bio_state.muscle.left, worm.bio_state.muscle.right);
 
-    nose_touching = collide_with_wall(&worm);
+    worm.nose_touching = collide_with_wall(&worm);
 
-    sprite_update(&sprite, &worm);
+    sprite_update(&worm);
 
-    SDL_Rect sprite_rect;
-    sprite_rect.x = sprite.x;
-    sprite_rect.y = sprite.y;
-    sprite_rect.w = sprite.w;
-    sprite_rect.h = sprite.h;
-
-    SDL_RenderCopyEx(rend, tex, NULL, &sprite_rect, sprite.theta, NULL, SDL_FLIP_NONE);
-    SDL_RenderDrawRect(rend, &sprite_rect);
+    SDL_RenderCopyEx(rend, tex, NULL, &(worm.sprite_rect), worm.sprite.theta, NULL, SDL_FLIP_NONE);
+    SDL_RenderDrawRect(rend, &(worm.sprite_rect));
 
     motion_component_display_update(&motion_component_display, &worm);
     motion_component_display_draw(rend, &motion_component_display);
