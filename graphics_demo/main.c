@@ -529,23 +529,29 @@ int main(int argc, char* argv[]) {
   MotionComponentDisplay motion_component_display;
   motion_component_display_init(&motion_component_display);
 
-  // Create and initialize worm
-  Worm worm;
-  uint32_t worm_x_init = (rand() % (int)(0.75*WINDOW_X)) + (int)(.125*WINDOW_X);
-  uint32_t worm_y_init = (rand() % (int)(0.75*WINDOW_Y)) + (int)(.125*WINDOW_Y);
-  double worm_theta_init = rand() % 360;
-  worm.phys_state = (WormPhysicalState) {worm_x_init, worm_y_init, 0.0, 0.0, worm_theta_init};
-  ctm_init(&worm.bio_state.connectome);
-  worm.bio_state.muscle = (MuscleState) {0, 0, 0, 0, 0};
-  worm.bio_state.motor_ab_fire_avg = 5.25;
-  worm.nose_touching = 0;
-  worm.sprite = (Sprite) {(int)worm.phys_state.x, (int)worm.phys_state.y, SPRITE_W, SPRITE_H, worm.phys_state.theta};
+  // Create array of worms
+  static const uint8_t num_worms = 10;
+  Worm* worm_arr = malloc(num_worms*sizeof(Worm));
 
-  // Burn in worm state
-  int rand_int = (rand() % 1000) + 500;
-  for(int i = 0; i < rand_int; i++) {
-      worm_update(&worm, chemotaxis, 8);
+  for(uint8_t n=0; n < num_worms; n++) {
+    // Initialize worms
+    uint32_t worm_x_init = (rand() % (int)(0.75*WINDOW_X)) + (int)(.125*WINDOW_X);
+    uint32_t worm_y_init = (rand() % (int)(0.75*WINDOW_Y)) + (int)(.125*WINDOW_Y);
+    double worm_theta_init = rand() % 360;
+    worm_arr[n].phys_state = (WormPhysicalState) {worm_x_init, worm_y_init, 0.0, 0.0, worm_theta_init};
+    ctm_init(&worm_arr[n].bio_state.connectome);
+    worm_arr[n].bio_state.muscle = (MuscleState) {0, 0, 0, 0, 0};
+    worm_arr[n].bio_state.motor_ab_fire_avg = 5.25;
+    worm_arr[n].nose_touching = 0;
+    worm_arr[n].sprite = (Sprite) {(int)worm_arr[n].phys_state.x, (int)worm_arr[n].phys_state.y, SPRITE_W, SPRITE_H, worm_arr[n].phys_state.theta};
+    
+    // Burn in worm state
+    int rand_int = (rand() % 1000) + 500;
+    for(int i = 0; i < rand_int; i++) {
+        worm_update(&worm_arr[n], chemotaxis, 8);
+    }
   }
+
 
   // Begin graphical simulation
   SDL_Event sdl_event;
@@ -563,40 +569,43 @@ int main(int argc, char* argv[]) {
     SDL_SetRenderDrawColor(rend, 128, 128, 128, 255);
     SDL_RenderClear(rend);
 
-    if(i % 120 == 0) {
-      if(worm.nose_touching) {
-        worm_update(&worm, nose_touch, 10);
+    for(uint8_t n=0; n<num_worms; n++) {
+      if(i % 120 == 0) {
+        if(worm_arr[n].nose_touching) {
+          worm_update(&worm_arr[n], nose_touch, 10);
+        }
+        else {
+          worm_update(&worm_arr[n], chemotaxis, 8);
+        }
       }
       else {
-        worm_update(&worm, chemotaxis, 8);
+        worm_phys_state_update(&(worm_arr[n].phys_state), &(worm_arr[n].bio_state.muscle));
+      }
+
+      if(worm_arr[n].nose_touching) {
+        SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
+      }
+      else {
+        SDL_SetRenderDrawColor(rend, 0, 0, 0, 0);
+      }
+
+      //printf("%d %d\n", worm.bio_state.muscle.left, worm.bio_state.muscle.right);
+
+      worm_arr[n].nose_touching = collide_with_wall(&worm_arr[n]);
+
+      sprite_update(&worm_arr[n]);
+
+      SDL_RenderCopyEx(rend, tex, NULL, &(worm_arr[n].sprite_rect), worm_arr[n].sprite.theta, NULL, SDL_FLIP_NONE);
+      SDL_RenderDrawRect(rend, &(worm_arr[n].sprite_rect));
+
+      if(n==0) {
+        motion_component_display_update(&motion_component_display, &worm_arr[n]);
+        muscle_display_update(&muscle_display, &worm_arr[n]);
       }
     }
-    else {
-      worm_phys_state_update(&(worm.phys_state), &(worm.bio_state.muscle));
-    }
 
-    if(worm.nose_touching) {
-      SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
-    }
-    else {
-      SDL_SetRenderDrawColor(rend, 0, 0, 0, 0);
-    }
-
-    //printf("%d %d\n", worm.bio_state.muscle.left, worm.bio_state.muscle.right);
-
-    worm.nose_touching = collide_with_wall(&worm);
-
-    sprite_update(&worm);
-
-    SDL_RenderCopyEx(rend, tex, NULL, &(worm.sprite_rect), worm.sprite.theta, NULL, SDL_FLIP_NONE);
-    SDL_RenderDrawRect(rend, &(worm.sprite_rect));
-
-    motion_component_display_update(&motion_component_display, &worm);
     motion_component_display_draw(rend, &motion_component_display);
-
-    muscle_display_update(&muscle_display, &worm);
     muscle_display_draw(rend, &muscle_display);
-
     SDL_RenderPresent(rend);
 
     //SDL_Delay(100);
