@@ -31,6 +31,11 @@ typedef struct {
   int w;
   int h;
   double theta;
+  // Bounding box for collisions (left right top bottom)
+  int l_bound;
+  int r_bound;
+  int t_bound;
+  int b_bound;
 } Sprite;
 
 // Worm states
@@ -333,8 +338,13 @@ void sprite_update(Worm* const worm) {
     worm->sprite.theta += 180;
   }
 
-  worm->sprite_rect.x = worm->sprite.x;
-  worm->sprite_rect.y = worm->sprite.y;
+  worm->sprite.l_bound = worm->sprite.x - SPRITE_W/2;
+  worm->sprite.r_bound = worm->sprite.x + SPRITE_W/2;
+  worm->sprite.t_bound = worm->sprite.y - SPRITE_H/2;
+  worm->sprite.b_bound = worm->sprite.y + SPRITE_H/2;
+
+  worm->sprite_rect.x = worm->sprite.x - SPRITE_W/2;
+  worm->sprite_rect.y = worm->sprite.y - SPRITE_H/2;
   worm->sprite_rect.w = worm->sprite.w;
   worm->sprite_rect.h = worm->sprite.h;
 }
@@ -445,13 +455,49 @@ void worm_update(Worm* const worm, const uint16_t* stim_neuron, int len_stim_neu
   worm->bio_state.muscle.left = left_total / 0.5;
   worm->bio_state.muscle.right = right_total / 0.5;
 
-
-  worm_phys_state_update(&worm->phys_state, &worm->bio_state.muscle);
 }
 
 double dot(double const* a, double const* b) {
   return a[0]*b[0] + a[1]*b[1];
 }
+
+uint8_t collide_with_worm(Worm* const worm, uint8_t curr_index, Worm* const worm_arr, const uint8_t len) {
+  for(uint8_t i = 0; i < len; i++) {
+    if(i != curr_index) {
+      if( ((worm->sprite.l_bound >= worm_arr[i].sprite.l_bound) && (worm->sprite.l_bound <= worm_arr[i].sprite.r_bound)) ||
+          ((worm->sprite.r_bound >= worm_arr[i].sprite.l_bound) && (worm->sprite.r_bound <= worm_arr[i].sprite.r_bound)) ) {
+        if( ((worm->sprite.t_bound <= worm_arr[i].sprite.b_bound) && (worm->sprite.t_bound >= worm_arr[i].sprite.t_bound)) ||
+          ((worm->sprite.b_bound <= worm_arr[i].sprite.b_bound) && (worm->sprite.b_bound >= worm_arr[i].sprite.t_bound)) ) {
+
+          if((abs(worm->sprite.x - worm_arr[i].sprite.x) > SPRITE_W-1)) { 
+            // Approach from right
+            if(worm->sprite.l_bound < worm_arr[i].sprite.r_bound) {
+              worm->phys_state.x -= 1.0;
+            }
+            // Approach from left
+            else if(worm->sprite.r_bound > worm_arr[i].sprite.l_bound) {
+              worm->phys_state.x += 1.0;
+            }
+          }
+          if(abs(worm->sprite.y - worm_arr[i].sprite.y) > SPRITE_H-1) {
+
+            // Approach from bottom
+            if(worm->sprite.t_bound < worm_arr[i].sprite.b_bound) {
+              worm->phys_state.y -= 1.0;
+            }
+            // Approach from bottom
+            else if(worm->sprite.b_bound > worm_arr[i].sprite.t_bound) {
+              worm->phys_state.y += 1.0;
+            }
+          }
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+
 
 // Handles effects on worm's physical state if wall collision occurs
 // returns true if its nose is touching a wall
@@ -468,26 +514,26 @@ uint8_t collide_with_wall(Worm* const worm) {
   uint8_t collide;
 
   // Right
-  if(worm->phys_state.x > WINDOW_X - SPRITE_W) {
-    worm->phys_state.x = WINDOW_X - SPRITE_W;
+  if(worm->phys_state.x > WINDOW_X - SPRITE_W/2) {
+    worm->phys_state.x = WINDOW_X - SPRITE_W/2;
     dot_prod = dot(v, nvec_right);
     collide = 1;
   }
   // Left
-  else if(worm->phys_state.x < 0.0) {
-    worm->phys_state.x = 0.0;
+  else if(worm->phys_state.x < SPRITE_W/2) {
+    worm->phys_state.x = SPRITE_W/2;
     dot_prod = dot(v, nvec_left);
     collide = 1;
   }
   // Bottom
-  if(worm->phys_state.y > WINDOW_Y - SPRITE_H) {
-    worm->phys_state.y = WINDOW_Y - SPRITE_H;
+  if(worm->phys_state.y > WINDOW_Y - SPRITE_H/2) {
+    worm->phys_state.y = WINDOW_Y - SPRITE_H/2;
     dot_prod = dot(v, nvec_bottom);
     collide = 1;
   }
   // Top
-  else if(worm->phys_state.y < 0.0) {
-    worm->phys_state.y = 0.0;
+  else if(worm->phys_state.y < SPRITE_H/2) {
+    worm->phys_state.y = SPRITE_H/2;
     dot_prod = dot(v, nvec_top);
     collide = 1;
   }
@@ -530,7 +576,7 @@ int main(int argc, char* argv[]) {
   motion_component_display_init(&motion_component_display);
 
   // Create array of worms
-  static const uint8_t num_worms = 10;
+  static const uint8_t num_worms = 25;
   Worm* worm_arr = malloc(num_worms*sizeof(Worm));
 
   for(uint8_t n=0; n < num_worms; n++) {
@@ -543,7 +589,17 @@ int main(int argc, char* argv[]) {
     worm_arr[n].bio_state.muscle = (MuscleState) {0, 0, 0, 0, 0};
     worm_arr[n].bio_state.motor_ab_fire_avg = 5.25;
     worm_arr[n].nose_touching = 0;
-    worm_arr[n].sprite = (Sprite) {(int)worm_arr[n].phys_state.x, (int)worm_arr[n].phys_state.y, SPRITE_W, SPRITE_H, worm_arr[n].phys_state.theta};
+    worm_arr[n].sprite = (Sprite) {
+      (int)worm_arr[n].phys_state.x,
+      (int)worm_arr[n].phys_state.y,
+      SPRITE_W,
+      SPRITE_H,
+      worm_arr[n].phys_state.theta,
+      (int)worm_arr[n].phys_state.x - SPRITE_W/2,
+      (int)worm_arr[n].phys_state.x + SPRITE_W/2,
+      (int)worm_arr[n].phys_state.y - SPRITE_H/2,
+      (int)worm_arr[n].phys_state.y + SPRITE_H/2
+    };
     
     // Burn in worm state
     int rand_int = (rand() % 1000) + 500;
@@ -577,6 +633,7 @@ int main(int argc, char* argv[]) {
         else {
           worm_update(&worm_arr[n], chemotaxis, 8);
         }
+        worm_phys_state_update(&(worm_arr[n].phys_state), &(worm_arr[n].bio_state.muscle));
       }
       else {
         worm_phys_state_update(&(worm_arr[n].phys_state), &(worm_arr[n].bio_state.muscle));
@@ -591,6 +648,9 @@ int main(int argc, char* argv[]) {
 
       //printf("%d %d\n", worm.bio_state.muscle.left, worm.bio_state.muscle.right);
 
+      sprite_update(&worm_arr[n]);
+      
+      collide_with_worm(&worm_arr[n], n, worm_arr, num_worms);
       worm_arr[n].nose_touching = collide_with_wall(&worm_arr[n]);
 
       sprite_update(&worm_arr[n]);
