@@ -470,23 +470,23 @@ uint8_t collide_with_worm(Worm* const worm, uint8_t curr_index, Worm* const worm
           ((worm->sprite.b_bound <= worm_arr[i].sprite.b_bound) && (worm->sprite.b_bound >= worm_arr[i].sprite.t_bound)) ) {
 
           if((abs(worm->sprite.x - worm_arr[i].sprite.x) > SPRITE_W-1)) { 
-            // Approach from right
-            if(worm->sprite.l_bound < worm_arr[i].sprite.r_bound) {
+            // Approach from left
+            if(worm->sprite.x < worm_arr[i].sprite.x) {
               worm->phys_state.x -= 1.0;
             }
-            // Approach from left
-            else if(worm->sprite.r_bound > worm_arr[i].sprite.l_bound) {
+            // Approach from right
+            else if(worm->sprite.x > worm_arr[i].sprite.x) {
               worm->phys_state.x += 1.0;
             }
           }
           if(abs(worm->sprite.y - worm_arr[i].sprite.y) > SPRITE_H-1) {
 
-            // Approach from bottom
-            if(worm->sprite.t_bound < worm_arr[i].sprite.b_bound) {
+            // Approach from (screen) top
+            if(worm->sprite.y < worm_arr[i].sprite.y) {
               worm->phys_state.y -= 1.0;
             }
-            // Approach from bottom
-            else if(worm->sprite.b_bound > worm_arr[i].sprite.t_bound) {
+            // Approach from (screen) bottom
+            else if(worm->sprite.y > worm_arr[i].sprite.y) {
               worm->phys_state.y += 1.0;
             }
           }
