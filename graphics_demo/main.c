@@ -462,12 +462,24 @@ double dot(double const* a, double const* b) {
 }
 
 uint8_t collide_with_worm(Worm* const worm, uint8_t curr_index, Worm* const worm_arr, const uint8_t len) {
+  uint8_t nose_touching = 0;
   for(uint8_t i = 0; i < len; i++) {
+
     if(i != curr_index) {
+
+      const double r[2] = {worm_arr[i].phys_state.x - worm->phys_state.x, worm_arr[i].phys_state.y - worm->phys_state.y};
+      const double v[2] = {worm->phys_state.vx, worm->phys_state.vy};
+
+      if( ((dot(r, v) > 0) && (worm->bio_state.muscle.left > 0) && (worm->bio_state.muscle.right > 0)) &&
+          ((abs(worm->sprite.x - worm_arr[i].sprite.x) < SPRITE_W+10) && (abs(worm->sprite.y - worm_arr[i].sprite.y) < SPRITE_H+10 ))) {
+        nose_touching = 1;
+      }
+
       if( ((worm->sprite.l_bound >= worm_arr[i].sprite.l_bound) && (worm->sprite.l_bound <= worm_arr[i].sprite.r_bound)) ||
           ((worm->sprite.r_bound >= worm_arr[i].sprite.l_bound) && (worm->sprite.r_bound <= worm_arr[i].sprite.r_bound)) ) {
         if( ((worm->sprite.t_bound <= worm_arr[i].sprite.b_bound) && (worm->sprite.t_bound >= worm_arr[i].sprite.t_bound)) ||
-          ((worm->sprite.b_bound <= worm_arr[i].sprite.b_bound) && (worm->sprite.b_bound >= worm_arr[i].sprite.t_bound)) ) {
+            ((worm->sprite.b_bound <= worm_arr[i].sprite.b_bound) && (worm->sprite.b_bound >= worm_arr[i].sprite.t_bound)) ) {
+
 
           if((abs(worm->sprite.x - worm_arr[i].sprite.x) > SPRITE_W-1)) { 
             // Approach from left
@@ -494,7 +506,7 @@ uint8_t collide_with_worm(Worm* const worm, uint8_t curr_index, Worm* const worm
       }
     }
   }
-  return 0;
+  return nose_touching;
 }
 
 
@@ -650,8 +662,7 @@ int main(int argc, char* argv[]) {
 
       sprite_update(&worm_arr[n]);
       
-      collide_with_worm(&worm_arr[n], n, worm_arr, num_worms);
-      worm_arr[n].nose_touching = collide_with_wall(&worm_arr[n]);
+      worm_arr[n].nose_touching = collide_with_worm(&worm_arr[n], n, worm_arr, num_worms) || collide_with_wall(&worm_arr[n]);
 
       sprite_update(&worm_arr[n]);
 
@@ -666,7 +677,10 @@ int main(int argc, char* argv[]) {
 
     motion_component_display_draw(rend, &motion_component_display);
     muscle_display_draw(rend, &muscle_display);
-    SDL_RenderPresent(rend);
+
+    if(i > 1000) {
+      SDL_RenderPresent(rend);
+    }
 
     //SDL_Delay(100);
     //break;
