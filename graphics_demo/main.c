@@ -31,11 +31,6 @@ typedef struct {
   int w;
   int h;
   double theta;
-  // Bounding box for collisions (left right top bottom)
-  int l_bound;
-  int r_bound;
-  int t_bound;
-  int b_bound;
 } Sprite;
 
 // Worm states
@@ -338,11 +333,6 @@ void sprite_update(Worm* const worm) {
     worm->sprite.theta += 180;
   }
 
-  worm->sprite.l_bound = worm->sprite.x - SPRITE_W/2;
-  worm->sprite.r_bound = worm->sprite.x + SPRITE_W/2;
-  worm->sprite.t_bound = worm->sprite.y - SPRITE_H/2;
-  worm->sprite.b_bound = worm->sprite.y + SPRITE_H/2;
-
   worm->sprite_rect.x = worm->sprite.x - SPRITE_W/2;
   worm->sprite_rect.y = worm->sprite.y - SPRITE_H/2;
   worm->sprite_rect.w = worm->sprite.w;
@@ -466,21 +456,22 @@ uint8_t collide_with_worm(Worm* const worm, uint8_t curr_index, Worm* const worm
   for(uint8_t i = 0; i < len; i++) {
 
     if(i != curr_index) {
+      const uint16_t x_sep = abs(worm->sprite.x - worm_arr[i].sprite.x);
+      const uint16_t y_sep = abs(worm->sprite.y - worm_arr[i].sprite.y);
 
       const double r[2] = {worm_arr[i].phys_state.x - worm->phys_state.x, worm_arr[i].phys_state.y - worm->phys_state.y};
       const double v[2] = {worm->phys_state.vx, worm->phys_state.vy};
 
-      if( ((dot(r, v) > 0) && (worm->bio_state.muscle.left > 0) && (worm->bio_state.muscle.right > 0)) &&
-          ((abs(worm->sprite.x - worm_arr[i].sprite.x) < SPRITE_W+10) && (abs(worm->sprite.y - worm_arr[i].sprite.y) < SPRITE_H+10 ))) {
-        nose_touching = 1;
+      // Decide whether nose is touching
+      if( (dot(r, v) > 0) && (worm->bio_state.muscle.left > 0) && (worm->bio_state.muscle.right > 0) ) {
+        if( (x_sep < SPRITE_W+10) && (y_sep < SPRITE_H+10 )) {
+          nose_touching = 1;
+        }
       }
 
-      if( ((worm->sprite.l_bound >= worm_arr[i].sprite.l_bound) && (worm->sprite.l_bound <= worm_arr[i].sprite.r_bound)) ||
-          ((worm->sprite.r_bound >= worm_arr[i].sprite.l_bound) && (worm->sprite.r_bound <= worm_arr[i].sprite.r_bound)) ) {
-        if( ((worm->sprite.t_bound <= worm_arr[i].sprite.b_bound) && (worm->sprite.t_bound >= worm_arr[i].sprite.t_bound)) ||
-            ((worm->sprite.b_bound <= worm_arr[i].sprite.b_bound) && (worm->sprite.b_bound >= worm_arr[i].sprite.t_bound)) ) {
-
-
+      // Do the physics of the collision
+      if(x_sep <= SPRITE_W) {
+        if(y_sep <= SPRITE_H) {
           if((abs(worm->sprite.x - worm_arr[i].sprite.x) > SPRITE_W-1)) { 
             // Approach from left
             if(worm->sprite.x < worm_arr[i].sprite.x) {
@@ -607,10 +598,6 @@ int main(int argc, char* argv[]) {
       SPRITE_W,
       SPRITE_H,
       worm_arr[n].phys_state.theta,
-      (int)worm_arr[n].phys_state.x - SPRITE_W/2,
-      (int)worm_arr[n].phys_state.x + SPRITE_W/2,
-      (int)worm_arr[n].phys_state.y - SPRITE_H/2,
-      (int)worm_arr[n].phys_state.y + SPRITE_H/2
     };
     
     // Burn in worm state
@@ -658,11 +645,11 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(rend, 0, 0, 0, 0);
       }
 
-      //printf("%d %d\n", worm.bio_state.muscle.left, worm.bio_state.muscle.right);
-
       sprite_update(&worm_arr[n]);
-      
-      worm_arr[n].nose_touching = collide_with_worm(&worm_arr[n], n, worm_arr, num_worms) || collide_with_wall(&worm_arr[n]);
+
+      worm_arr[n].nose_touching = 0;
+      worm_arr[n].nose_touching = worm_arr[n].nose_touching || collide_with_wall(&worm_arr[n]);
+      worm_arr[n].nose_touching = worm_arr[n].nose_touching || collide_with_worm(&worm_arr[n], n, worm_arr, num_worms);
 
       sprite_update(&worm_arr[n]);
 
