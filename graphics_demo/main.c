@@ -562,13 +562,31 @@ int main(int argc, char* argv[]) {
   SDL_CreateWindowAndRenderer(WINDOW_X, WINDOW_Y, 0, &win, &rend);
   SDL_SetRenderDrawBlendMode(rend, SDL_BLENDMODE_BLEND);
 
-  // Pull image for worm sprite and create texture
+  // Pull images for worm sprites and create textures
   SDL_Surface* surf;
-  SDL_Texture* tex;
+  SDL_Texture* worm_tex;
+  SDL_Texture* worm_nose_tex;
+  SDL_Texture* worm_mark_tex;
+  SDL_Texture* worm_mark_nose_tex;
 
   surf = SDL_LoadBMP("./graphics_demo/worm.bmp");
-  tex = SDL_CreateTextureFromSurface(rend, surf);
+  worm_tex = SDL_CreateTextureFromSurface(rend, surf);
   SDL_FreeSurface(surf);
+
+  surf = SDL_LoadBMP("./graphics_demo/worm_nose.bmp");
+  worm_nose_tex = SDL_CreateTextureFromSurface(rend, surf);
+  SDL_FreeSurface(surf);
+
+  surf = SDL_LoadBMP("./graphics_demo/worm_mark.bmp");
+  worm_mark_tex = SDL_CreateTextureFromSurface(rend, surf);
+  SDL_FreeSurface(surf);
+
+  surf = SDL_LoadBMP("./graphics_demo/worm_mark_nose.bmp");
+  worm_mark_nose_tex = SDL_CreateTextureFromSurface(rend, surf);
+  SDL_FreeSurface(surf);
+
+  // Texture for current state of the worm
+  SDL_Texture* curr_tex;
 
   // Create and initialize muscle display
   MuscleDisplay muscle_display;
@@ -621,7 +639,7 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    SDL_SetRenderDrawColor(rend, 128, 128, 128, 255);
+    SDL_SetRenderDrawColor(rend, 128, 128, 128, 0);
     SDL_RenderClear(rend);
 
     for(uint8_t n=0; n<num_worms; n++) {
@@ -632,17 +650,25 @@ int main(int argc, char* argv[]) {
         else {
           worm_update(&worm_arr[n], chemotaxis, 8);
         }
-        worm_phys_state_update(&(worm_arr[n].phys_state), &(worm_arr[n].bio_state.muscle));
       }
-      else {
-        worm_phys_state_update(&(worm_arr[n].phys_state), &(worm_arr[n].bio_state.muscle));
-      }
+      worm_phys_state_update(&(worm_arr[n].phys_state), &(worm_arr[n].bio_state.muscle));
 
-      if(worm_arr[n].nose_touching) {
-        SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
+      // Set what graphic to to use
+      if(n == 0) {
+        if(worm_arr[n].nose_touching) {
+          curr_tex = worm_mark_nose_tex;
+        }
+        else {
+          curr_tex = worm_mark_tex;
+        }
       }
       else {
-        SDL_SetRenderDrawColor(rend, 0, 0, 0, 0);
+        if(worm_arr[n].nose_touching) {
+          curr_tex = worm_nose_tex;
+        }
+        else {
+          curr_tex = worm_tex;
+        }
       }
 
       sprite_update(&worm_arr[n]);
@@ -653,7 +679,7 @@ int main(int argc, char* argv[]) {
 
       sprite_update(&worm_arr[n]);
 
-      SDL_RenderCopyEx(rend, tex, NULL, &(worm_arr[n].sprite_rect), worm_arr[n].sprite.theta, NULL, SDL_FLIP_NONE);
+      SDL_RenderCopyEx(rend, curr_tex, NULL, &(worm_arr[n].sprite_rect), worm_arr[n].sprite.theta, NULL, SDL_FLIP_NONE);
       SDL_RenderDrawRect(rend, &(worm_arr[n].sprite_rect));
 
       if(n==0) {
