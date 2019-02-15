@@ -9,14 +9,11 @@
 //
 
 #ifdef ARDUINO_AVR_UNO
+#include <avr/pgmspace.h>
 #define LARGE_CONST_ARR PROGMEM
-#else
-#define LARGE_CONST_ARR
-#endif
-
-#ifdef ARDUINO_AVR_UNO
 #define READ_WORD(ARR, IDX) pgm_read_word_near(ARR + IDX)
 #else
+#define LARGE_CONST_ARR
 #define READ_WORD(ARR, IDX) ARR[IDX]
 #endif
 
