@@ -1,7 +1,7 @@
 // Simple test of connectome interfaces
 //
 // Compile with:
-// gcc -ggdb -I./include -o ./nanotode_test test/main.c src/muscles.c src/connectome.c src/neural_rom.c
+// gcc -ggdb -I./source -o ./nanotode_test test/main.c source/muscles.c source/connectome.c source/neural_rom.c
 //
 
 #include <stdio.h>
