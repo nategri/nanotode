@@ -40,14 +40,14 @@ int main() {
   
   // Arrays for neurons describing 'nose touch' and
   // food-seeking behaviors
-  /*const uint16_t nose_touch[] = {
+  const uint16_t nose_touch[] = {
     N_FLPR, N_FLPL, N_ASHL, N_ASHR, N_IL1VL, N_IL1VR,
     N_OLQDL, N_OLQDR, N_OLQVR, N_OLQVL
-  };*/
-  const uint16_t nose_touch[] = {
+  };
+  /*const uint16_t nose_touch[] = {
     N_FLPR, N_FLPL, N_ASHL, N_ASHR,
     N_OLQDL, N_OLQDR, N_OLQVR, N_OLQVL
-  };
+  };*/
 
   const uint16_t chemotaxis[] = {
     N_ADFL, N_ADFR, N_ASGR, N_ASGL, N_ASIL, N_ASIR,
