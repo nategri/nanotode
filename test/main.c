@@ -20,20 +20,6 @@ void print_motor_ab_discharges(FILE* const f, const uint8_t* a, const uint8_t* b
   fprintf(f, "%d\n", b[MOTOR_B - 1]);
 }
 
-void update_motor_avg(double* avg, const uint8_t* a, const uint8_t* b) {
-  double curr = 0;
-  for(uint8_t i = 0; i < MOTOR_A; i++) {
-    curr += a[i];
-  }
-  for(uint8_t i = 0; i < MOTOR_B; i++) {
-    curr += b[i];
-  }
-
-  *avg = (curr + ((MOTOR_A+MOTOR_B)*(*avg))) / (MOTOR_A+MOTOR_B+1);
-
-  printf("%f\n", *avg);
-}
-
 int main() {
   // Open file for writing
   FILE* file = fopen("motor_ab.dat", "w");
@@ -44,10 +30,6 @@ int main() {
     N_FLPR, N_FLPL, N_ASHL, N_ASHR, N_IL1VL, N_IL1VR,
     N_OLQDL, N_OLQDR, N_OLQVR, N_OLQVL
   };
-  /*const uint16_t nose_touch[] = {
-    N_FLPR, N_FLPL, N_ASHL, N_ASHR,
-    N_OLQDL, N_OLQDR, N_OLQVR, N_OLQVL
-  };*/
 
   const uint16_t chemotaxis[] = {
     N_ADFL, N_ADFR, N_ASGR, N_ASGL, N_ASIL, N_ASIR,
@@ -79,7 +61,6 @@ int main() {
     ctm_discharge_query(&connectome, motor_neuron_b, motor_b_result, MOTOR_B);
     ctm_discharge_query(&connectome, motor_neuron_a, motor_a_result, MOTOR_A);
     print_motor_ab_discharges(file, motor_a_result, motor_b_result);
-    update_motor_avg(&motor_neuron_avg, motor_a_result, motor_b_result);
   }
 
   for(uint16_t i = 0; i < 1000; i++) {
@@ -87,7 +68,6 @@ int main() {
     ctm_discharge_query(&connectome, motor_neuron_b, motor_b_result, MOTOR_B);
     ctm_discharge_query(&connectome, motor_neuron_a, motor_a_result, MOTOR_A);
     print_motor_ab_discharges(file, motor_a_result, motor_b_result);
-    update_motor_avg(&motor_neuron_avg, motor_a_result, motor_b_result);
   }
 
 

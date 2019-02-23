@@ -23,4 +23,6 @@ for line in f:
 pyplot.plot(a_t, a_data, 'ro')
 pyplot.plot(b_t, b_data, 'bo')
 
+pyplot.xlim(900, 1100)
+
 pyplot.savefig("motor_ab.png")
