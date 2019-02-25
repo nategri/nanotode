@@ -9,14 +9,15 @@ with open('./CElegansNeuronTables/Connectome.csv', 'r') as f:
     if comps[0] == 'Origin':
       continue
 
+    val = int(comps[3])
+
+    if 'GABA' in comps[4]:
+      val = -1*val
+
     try:
-      val = int(comps[3])
-      if 'GABA' in comps[4]:
-        neuronDict[comps[0]][comps[1]] = -1*val
-      else:
-        neuronDict[comps[0]][comps[1]] = val
+      neuronDict[comps[0]][comps[1]] = val
     except KeyError:
-      neuronDict[comps[0]] = {}
+      neuronDict[comps[0]] = {comps[1]: val}
 
     if comps[1] not in neuronDict:
       neuronDict[comps[1]] = {}
@@ -28,14 +29,16 @@ with open('./CElegansNeuronTables/NeuronsToMuscle.csv', 'r') as f:
     if comps[0] == 'Neuron':
       continue
 
+    val = int(comps[2])
+
+    if 'GABA' in comps[3]:
+      val = -1*val
+
     try:
-      val = int(comps[2])
-      if 'GABA' in comps[3]:
-        neuronDict[comps[0]][comps[1]] = -1*val
-      else:
-        neuronDict[comps[0]][comps[1]] = val
+      neuronDict[comps[0]][comps[1]] = val
     except KeyError:
-        neuronDict[comps[0]] = {}
+      neuronDict[comps[0]] = {comps[1]: val}
+
 
     if comps[1] not in neuronDict:
       neuronDict[comps[1]] = {}
