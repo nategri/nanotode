@@ -9,8 +9,10 @@ Its spiking neural network utilizes a simplified leaky integrate-and-fire model,
 with inter-neuron connection weights derived from data available via the
 OpenWorm project [1].
 
-In time it is my hope that this simulation becomes ever more refined and
-accurate, while still remaining performant enough for its intended contexts.
+It is my hope that this framework spurs further research (by myself and others)
+into how accurately we can render this tiny organism on a small computer
+---possibly inspiring a new set of educational tools for young people with an
+interest in biology or robotics.
 
 ## Project Layout
 
@@ -28,7 +30,7 @@ after sensory stimulation
 * `python_plotting`: Two scripts for creating plots which visualize the data in
 a motor_ab.dat file
 
-<p align="center"><img width=500 src="/images/moto_ab.png"></p> <p
+<p align="center"><img width=500 src="/images/motor_ab.png"></p> <p
 align="center"><b>Figure 1.</b><br><i>A and B-type motor neuron activation in
 the connectome simulation.</i>.</p>
 
