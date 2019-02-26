@@ -10,9 +10,8 @@ with inter-neuron connection weights derived from data available via the
 OpenWorm project [1].
 
 It is my hope that this framework spurs further research (by myself and others)
-into how accurately we can render this tiny organism on a small computer
----possibly inspiring a new set of educational tools for young people with an
-interest in biology or robotics.
+into how accurately we can render this tiny organism on a small computer---possibly
+inspiring a new set of educational tools for young people with an interest in biology or robotics.
 
 ## Project Layout
 
@@ -22,7 +21,8 @@ the OpenWorm project's CElegansNeuronTables.xls spreadsheet, which contains the
 layout of the C. elegans nervous system [2]
 * `python_parsing`: Contains utilities for parsing the aforementioned CSV files
 into a JSON representation, and parsing that JSON representation into a binary
-one suitable for consumption by the nanotode simulation
+one suitable for consumption by the nanotode simulation (see file:
+source/neural_rom.c)
 * `source`: Headers and source files for the nanotode framework
 * `test`: Contains an example main() function that ouputs a file representing
 the A and B-type motor neuron activity of the worm ('motor_ab.dat'), before and
