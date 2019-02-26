@@ -20,9 +20,23 @@ for line in f:
 
     tick += 1
 
-pyplot.plot(a_t, a_data, 'ro')
-pyplot.plot(b_t, b_data, 'bo')
+pyplot.plot(a_t, a_data, 'ro', label='A-type neuron')
+pyplot.plot(b_t, b_data, 'bo', label='B-type neuron')
 
 pyplot.xlim(900, 1100)
+
+pyplot.title(
+  """
+  Nanotode light-weight C. elegans simulation\n\nMotor neuron response to sensory input\n(Nose touch t > 1000
+  """
+)
+
+pyplot.xlabel("t [neural sim ticks")
+pyplot.ylabel("firing motor neurons")
+pyplot.axes().yaxis.set_ticks([])
+
+pyplot.legend(loc=2, numpoints=1)
+
+pyplot.tight_layout()
 
 pyplot.savefig("motor_ab.png")
