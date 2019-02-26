@@ -16,18 +16,22 @@ inspiring a new set of educational tools for young people with an interest in bi
 ## Project Layout
 
 Some notable files in the nanotode repository:
-* `CElegansNeuronTables`: Directory containing a CSV-converted representation of
+* `CElegansNeuronTables`:
+Directory containing a CSV-converted representation of
 the OpenWorm project's CElegansNeuronTables.xls spreadsheet, which contains the
 layout of the C. elegans nervous system [2]
-* `python_parsing`: Contains utilities for parsing the aforementioned CSV files
+* `python_parsing`:
+Contains utilities for parsing the aforementioned CSV files
 into a JSON representation, and parsing that JSON representation into a binary
-one suitable for consumption by the nanotode simulation (see file:
-source/neural_rom.c)
-* `source`: Headers and source files for the nanotode framework
-* `test`: Contains an example main() function that ouputs a file representing
+one suitable for consumption by the nanotode simulation (see file: source/neural_rom.c)
+* `source`:
+Headers and source files for the nanotode framework
+* `test`:
+Contains an example main() function that ouputs a file representing
 the A and B-type motor neuron activity of the worm ('motor_ab.dat'), before and
 after sensory stimulation
-* `python_plotting`: Two scripts for creating plots which visualize the data in
+* `python_plotting`:
+Two scripts for creating plots which visualize the data in
 a motor_ab.dat file
 
 <p align="center"><img width=500 src="/images/motor_ab.png"></p> <p
