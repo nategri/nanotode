@@ -40,8 +40,7 @@ the connectome simulation.</i>.</p>
 
 ## Projects Using the Nanotode Library
 
-* [nematode.farm](https://github.com/nategri/nematode_farm): A simple web-assembly based game
-utilizing C. elegans simulations
+* [nematode.farm](https://github.com/nategri/nematode_farm)
 * [nematoduino](https://github.com/nategri/nematoduino)
 
 ## Related Projects
