@@ -51,9 +51,8 @@ The source is configured to place the large array describing the nervous system 
 
 ## Projects Using the Nanotode Library
 
-#### [nematode.farm](https://github.com/nategri/nematode_farm)
+#### [nematode.farm](https://nematode.farm)
 A simple WASM and SDL2 based game utilizing C. elegans simulations
-
 
 #### [nematoduino](https://github.com/nategri/nematoduino)
 An Arduino UNO-compatible robotic simulation of the C. elegans nematode
